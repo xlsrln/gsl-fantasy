@@ -68,6 +68,13 @@ fetch('results.csv')
 
         document.getElementById('text2').innerHTML = table_code;
     })
+    
+fetch('latest_update') 
+    .then(response => response.text())
+    .then((data) => {
+    
+        document.getElementById('text3').innerHTML = data;
+    })
 //-->
     
 </script>
@@ -79,6 +86,9 @@ fetch('results.csv')
     
 <div id="text2" align="center"></div>
 
+<br><br><br>
+    
+<div id="text3" align="center"></div>
 
 </body></html>
 

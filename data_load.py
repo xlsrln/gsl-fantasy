@@ -34,6 +34,9 @@ for match in matches:
 # data is now a table, make it a dataframe
 df = pd.DataFrame(data)
 df.columns = ['player','won','lost','matchdata']
+
+last_match = df.iloc[1]['matchdata']
+
 df = df[df['matchdata'].str.contains("Code S")]
 df['round'] = df['matchdata'].apply(lambda x: x.split('Code S ')[1].split(' ')[0])
 df = df.drop('matchdata', axis=1)
@@ -80,3 +83,4 @@ standing_df.fillna(0).to_csv('standings.csv', float_format='%g')
 
 with open("latest_update", "w") as text_file:
     text_file.write("Updated: %s" % str(datetime.datetime.now()))
+    text_file.write('\nLatest round: %s' % str(last_match))

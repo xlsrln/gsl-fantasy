@@ -8,8 +8,8 @@ baseurl = "http://aligulac.com/api/v1/"
 authkey = {'apikey': keyfile.read().rstrip()}
 
 # Request
-myrequest = "match/?eventobj__uplink__parent=107374&limit=1000"
-#myrequest = "match/?eventobj__uplink__parent=110098&limit=100"
+#myrequest = "match/?eventobj__uplink__parent=107374"
+myrequest = "match/?eventobj__uplink__parent=110098&limit=100"
 
 # get response from api
 response = requests.get(baseurl + myrequest, params=authkey)
@@ -68,16 +68,15 @@ print(teams)
 team_df = pd.read_csv(teams, sep=', ', header='infer')
 team_df = team_df.melt(var_name='team', value_name='player')
 
-result_df = team_df.merge(point_df, on='player', how='inner')
+result_df = team_df.merge(point_df, on='player', how='left')
 standing_df = result_df.filter(items=['team','points']).groupby('team').sum().sort_values(by='points', ascending=False)
 
 print(result_df)
 print(standing_df)
 
 # write output
-result_df.to_csv('results.csv', index=False)
-standing_df.to_csv('standings.csv')
-
+result_df.fillna(0).to_csv('results.csv', index=False, float_format='%g')
+standing_df.fillna(0).to_csv('standings.csv', float_format='%g')
 
 with open("latest_update", "w") as text_file:
     text_file.write("Updated: %s" % str(datetime.datetime.now()))

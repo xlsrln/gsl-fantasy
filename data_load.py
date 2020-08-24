@@ -1,5 +1,7 @@
 import requests
 import pandas as pd
+from io import StringIO
+import datetime
 
 keyfile = open('apikey','r')
 baseurl = "http://aligulac.com/api/v1/"
@@ -41,9 +43,9 @@ df['round_points'] = df['round'].apply(lambda x: point_dict[x])
 print(df)
 
 # from the match dataframe, calculate won/lost and points
-point_df = df.filter(items=['player','round_points']).groupby('player').max('round_points')
-point_df['won_games'] = df.filter(items=['player','won']).groupby('player').sum('won')['won']
-point_df['lost_games'] = df.filter(items=['player','lost']).groupby('player').sum('lost')['lost']
+point_df = df.filter(items=['player','round_points']).groupby('player').max()
+point_df['won_games'] = df.filter(items=['player','won']).groupby('player').sum()['won']
+point_df['lost_games'] = df.filter(items=['player','lost']).groupby('player').sum()['lost']
 point_df['points'] = point_df['round_points'] * 5 + point_df['won_games'] - point_df['lost_games']
 
 print(point_df.sort_values('points', ascending=False))
@@ -52,7 +54,6 @@ print(point_df)
 
 
 # read teams and join with results
-from io import StringIO
 
 teams = StringIO("""
 NVP, MM Lolsters, SS telecom Z1, Varbergs Zergs, Grounzhog Day
@@ -76,3 +77,7 @@ print(standing_df)
 # write output
 result_df.to_csv('results.csv', index=False)
 standing_df.to_csv('standings.csv')
+
+
+with open("latest_update", "w") as text_file:
+    text_file.write("Updated: %s" % str(datetime.datetime.now()))

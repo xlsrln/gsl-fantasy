@@ -8,8 +8,8 @@ baseurl = "http://aligulac.com/api/v1/"
 authkey = {'apikey': keyfile.read().rstrip()}
 
 # Request
-#myrequest = "match/?eventobj__uplink__parent=107374"
-myrequest = "match/?eventobj__uplink__parent=110098&limit=100"
+myrequest = "match/?eventobj__uplink__parent=107374&limit=1000"
+#myrequest = "match/?eventobj__uplink__parent=110098&limit=100"
 
 # get response from api
 response = requests.get(baseurl + myrequest, params=authkey)

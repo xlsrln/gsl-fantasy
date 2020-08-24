@@ -3,7 +3,7 @@ import pandas as pd
 
 keyfile = open('apikey','r')
 baseurl = "http://aligulac.com/api/v1/"
-authkey = {'apikey': keyfile.read()}
+authkey = {'apikey': keyfile.read().rstrip()}
 
 # Request
 #myrequest = "match/?eventobj__uplink__parent=107374"

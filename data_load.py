@@ -8,13 +8,16 @@ baseurl = "http://aligulac.com/api/v1/"
 authkey = {'apikey': keyfile.read().rstrip()}
 
 # Request
-#myrequest = "match/?eventobj__uplink__parent=107374"
-myrequest = "match/?eventobj__uplink__parent=110098&limit=100"
+# myrequest = "match/?eventobj__uplink__parent=110098&limit=100&order=-date" # GSL s2 2020
+myrequest = "match/?eventobj__uplink__parent=107374&limit=100&order=-date" # GSL s3 2020
+
 
 # get response from api
 response = requests.get(baseurl + myrequest, params=authkey)
 response.encoding = 'utf-8'
 mystring = response.text.replace('null', 'None').replace('false', 'False').replace('true', 'True')
+
+print(mystring)
 
 # eval string to dict, extract data from it
 matches = eval(mystring)['objects']
@@ -45,6 +48,9 @@ df['round_points'] = df['round'].apply(lambda x: point_dict[x])
 
 print(df)
 
+# save match data to csv
+df.to_csv('matches.csv', index=False)
+
 # from the match dataframe, calculate won/lost and points
 point_df = df.filter(items=['player','round_points']).groupby('player').max()
 point_df['won_games'] = df.filter(items=['player','won']).groupby('player').sum()['won']
@@ -56,7 +62,7 @@ print(point_df.sort_values('points', ascending=False))
 print(point_df)
 
 
-# read teams and join with results
+# read teams and join with results # TODO: have as separate file?
 
 teams = StringIO("""
 NVP, MM Lolsters, SS telecom Z1, Varbergs Zergs, Grounzhog Day

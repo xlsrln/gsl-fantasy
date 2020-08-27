@@ -11,13 +11,10 @@ authkey = {'apikey': keyfile.read().rstrip()}
 # myrequest = "match/?eventobj__uplink__parent=110098&limit=100&order=-date" # GSL s2 2020
 myrequest = "match/?eventobj__uplink__parent=107374&limit=100&order=-date" # GSL s3 2020
 
-
 # get response from api
 response = requests.get(baseurl + myrequest, params=authkey)
 response.encoding = 'utf-8'
 mystring = response.text.replace('null', 'None').replace('false', 'False').replace('true', 'True')
-
-print(mystring)
 
 # eval string to dict, extract data from it
 matches = eval(mystring)['objects']
@@ -46,8 +43,6 @@ df = df.drop('matchdata', axis=1)
 point_dict = {'Ro24': 1, 'Ro16': 2, 'Ro8': 3, 'Ro4': 4, 'Final': 5}
 df['round_points'] = df['round'].apply(lambda x: point_dict[x])
 
-print(df)
-
 # save match data to csv
 df.to_csv('matches.csv', index=False)
 
@@ -57,13 +52,8 @@ point_df['won_games'] = df.filter(items=['player','won']).groupby('player').sum(
 point_df['lost_games'] = df.filter(items=['player','lost']).groupby('player').sum()['lost']
 point_df['points'] = point_df['round_points'] * 5 + point_df['won_games'] - point_df['lost_games']
 
-print(point_df.sort_values('points', ascending=False))
-
-print(point_df)
-
-
-# read teams and join with results # TODO: have as separate file?
-
+# read teams 
+# TODO: have as separate file?
 teams = StringIO("""
 NVP, MM Lolsters, SS telecom Z1, Varbergs Zergs, Grounzhog Day
 rogue, ty, dark, maru, innovation
@@ -72,16 +62,12 @@ dream, trap, zest, soo, taeja
 ragnarok, byun, sos, bunny, hurricane
 """)
 
-print(teams)
-
 team_df = pd.read_csv(teams, sep=', ', header='infer')
 team_df = team_df.melt(var_name='team', value_name='player')
 
+# join teams with results to aggregate 
 result_df = team_df.merge(point_df, on='player', how='left')
 standing_df = result_df.filter(items=['team','points']).groupby('team').sum().sort_values(by='points', ascending=False)
-
-print(result_df)
-print(standing_df)
 
 # write output
 result_df.fillna(0).to_csv('results.csv', index=False, float_format='%g')
@@ -89,4 +75,8 @@ standing_df.fillna(0).to_csv('standings.csv', float_format='%g')
 
 with open("latest_update", "w") as text_file:
     text_file.write("Updated: %s" % str(datetime.datetime.now()))
-    text_file.write('\nLatest round: %s' % str(last_match))
+    text_file.write('<br><br>Latest round: %s' % str(last_match))
+
+print(result_df)
+
+

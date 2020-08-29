@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<style></style></head><body>
+
+<link rel="icon" href="favicon2.ico">
+<link rel="apple-touch-icon-precomposed" href="apple-icon-180x180.png">
+<link rel="icon" type="image/x-icon" href="favicon-32x32.png">
+<link rel="icon" type="image/x-icon" href="favicon-96x96.png">
+
+<meta name="msapplication-TileColor" content="#ffffff">
+<meta name="theme-color" content="#ffffff">
+<title>GSL fantasy </title>
+
+<style> table.example-table {   text-align: center; } </style>
+
+<script type="text/javascript">
+<!--
+
+fetch('standings.csv') 
+    .then(response => response.text())
+    .then((data) => {
+    
+        var dict = {
+            'NVP': 'nvp.png', 
+            'MM Lolsters': 'mm.png', 
+            'SS telecom Z1': 'ss.png', 
+            'Varbergs Zergs': 'vz.png', 
+            'Grounzhog Day': 'gd.png'
+        };
+
+        rows = data.split("\n")
+
+        table_code = '<table border=1 width=400px class="example-table">'
+        table_code += '<tr><th>logo</th><th>team</th><th>points</th></tr>' 
+        
+        for (var i = 1; i < rows.length; i++) {
+            if (rows[i].length > 0) {
+                console.log(rows[i]);
+                table_code += '<tr><td>'
+                table_code += '<img src=img/' + dict[rows[i].split(',')[0]] + ' height="50">' 
+                table_code += '<td>'
+                table_code += rows[i].replace(',', '</td><td>') 
+                table_code += '</td></tr>'
+            }
+        }
+
+        document.getElementById('text').innerHTML = table_code;
+    })
+    
+fetch('results.csv') 
+    .then(response => response.text())
+    .then((data) => {
+    
+        rows = data.split("\n")
+        table_code = '<table border=1 width=600px>'
+        
+        for (var i = 0; i < rows.length; i++) {
+            if (rows[i].length > 0) {
+                console.log(rows[i]);
+                table_code += '<tr><td>'
+                table_code += rows[i].replace(/,/g, '</td><td>') 
+                table_code += '</td></tr>'
+                if(i == 0){
+                    table_code = table_code.replace(/td/g, 'th')
+                }
+            }
+        }
+
+        document.getElementById('text2').innerHTML = table_code;
+    })
+    
+fetch('latest_update') 
+    .then(response => response.text())
+    .then((data) => {
+    
+        document.getElementById('text3').innerHTML = data;
+    })
+//-->
+    
+</script>
+
+<font size='3'>
+<div id="text" align="center"></div>
+
+<br><br>
+    
+<div id="text2" align="center"></div>
+
+<br>
+    
+<div id="text3" align="center"></div>
+
+</body></html>
+

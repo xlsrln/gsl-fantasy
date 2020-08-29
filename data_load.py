@@ -40,8 +40,8 @@ last_match = df.iloc[1]['matchdata']
 df = df[df['matchdata'].str.contains("Code S")]
 df['round'] = df['matchdata'].apply(lambda x: x.split('Code S ')[1].split(' ')[0])
 df = df.drop('matchdata', axis=1)
-point_dict = {'Ro24': 1, 'Ro16': 2, 'Ro8': 3, 'Ro4': 4, 'Final': 5}
-df['round_points'] = df['round'].apply(lambda x: point_dict[x])
+round_dict = {'Ro24': 1, 'Ro16': 2, 'Ro8': 3, 'Ro4': 4, 'Final': 5}
+df['round_points'] = df['round'].apply(lambda x: 5 * point_dict[x])
 
 # save match data to csv
 df.to_csv('matches.csv', index=False)
@@ -50,7 +50,7 @@ df.to_csv('matches.csv', index=False)
 point_df = df.filter(items=['player','round_points']).groupby('player').max()
 point_df['won_games'] = df.filter(items=['player','won']).groupby('player').sum()['won']
 point_df['lost_games'] = df.filter(items=['player','lost']).groupby('player').sum()['lost']
-point_df['points'] = point_df['round_points'] * 5 + point_df['won_games'] - point_df['lost_games']
+point_df['points'] = point_df['round_points'] + point_df['won_games'] - point_df['lost_games']
 
 # read teams 
 # TODO: have as separate file?

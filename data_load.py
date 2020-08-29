@@ -41,7 +41,7 @@ df = df[df['matchdata'].str.contains("Code S")]
 df['round'] = df['matchdata'].apply(lambda x: x.split('Code S ')[1].split(' ')[0])
 df = df.drop('matchdata', axis=1)
 round_dict = {'Ro24': 1, 'Ro16': 2, 'Ro8': 3, 'Ro4': 4, 'Final': 5}
-df['round_points'] = df['round'].apply(lambda x: 5 * point_dict[x])
+df['round_points'] = df['round'].apply(lambda x: 5 * round_dict[x])
 
 # save match data to csv
 df.to_csv('matches.csv', index=False)

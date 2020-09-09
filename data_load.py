@@ -28,14 +28,12 @@ for match in matches:
     score2 = match['scb']
     round = match['eventobj']['fullname']
     print(str(player1) + ', ' + str(score1) +', ' + str(score2) + ', ' + str(player2) + ', ' + str(round))
-    data.append([player1,score1,score2,round,score1>score2])
-    data.append([player2,score2,score1,round,score2>score1])
-
-
+    data.append([player1,score1,score2,round])
+    data.append([player2,score2,score1,round])
     
 # data is now a table, make it a dataframe
 df = pd.DataFrame(data)
-df.columns = ['player','won','lost','matchdata','match_win']
+df.columns = ['player','won','lost','matchdata']
 
 last_match = df.iloc[1]['matchdata']
 
@@ -52,8 +50,7 @@ df.to_csv('matches.csv', index=False)
 point_df = df.filter(items=['player','round_points']).groupby('player').max()
 point_df['won_games'] = df.filter(items=['player','won']).groupby('player').sum()['won']
 point_df['lost_games'] = df.filter(items=['player','lost']).groupby('player').sum()['lost']
-point_df['advances'] = (df.filter(items=['player','round_points', 'match_win']).groupby(['player','round_points']).mean().reset_index().groupby('player').min()['match_win'] > 0.5).astype(int)
-point_df['points'] = point_df['round_points'] + point_df['won_games'] - point_df['lost_games'] + 5 * point_df['advances']
+point_df['points'] = point_df['round_points'] + point_df['won_games'] - point_df['lost_games']
 
 # read teams 
 # TODO: have as separate file?

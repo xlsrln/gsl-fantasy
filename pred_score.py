@@ -24,7 +24,7 @@ live_sheetrange='B:I'
 
 rounds=['Ro24','Ro16','Ro8','Ro4','Final']
 
-adffile='matches.csv'
+adffile='output/matches.csv'
 
 #########################################################
 

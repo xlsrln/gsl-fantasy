@@ -1,6 +1,7 @@
 import requests
 import pandas as pd
 from io import StringIO
+import os
 import datetime
 
 keyfile = open('apikey','r')
@@ -28,12 +29,14 @@ for match in matches:
     score2 = match['scb']
     round = match['eventobj']['fullname']
     print(str(player1) + ', ' + str(score1) +', ' + str(score2) + ', ' + str(player2) + ', ' + str(round))
-    data.append([player1,score1,score2,round])
-    data.append([player2,score2,score1,round])
+    data.append([player1,score1,score2,round,score1>score2])
+    data.append([player2,score2,score1,round,score2>score1])
+
+
     
 # data is now a table, make it a dataframe
 df = pd.DataFrame(data)
-df.columns = ['player','won','lost','matchdata']
+df.columns = ['player','won','lost','matchdata','match_win']
 
 last_match = df.iloc[1]['matchdata']
 
@@ -44,13 +47,16 @@ round_dict = {'Ro24': 1, 'Ro16': 2, 'Ro8': 3, 'Ro4': 4, 'Final': 5}
 df['round_points'] = df['round'].apply(lambda x: 5 * round_dict[x])
 
 # save match data to csv
-df.to_csv('matches.csv', index=False)
+df.to_csv('output/matches.csv', index=False)
 
 # from the match dataframe, calculate won/lost and points
 point_df = df.filter(items=['player','round_points']).groupby('player').max()
 point_df['won_games'] = df.filter(items=['player','won']).groupby('player').sum()['won']
 point_df['lost_games'] = df.filter(items=['player','lost']).groupby('player').sum()['lost']
+point_df['advances'] = (df.filter(items=['player','round_points', 'match_win']).groupby(['player','round_points']).mean().reset_index().groupby('player').min()['match_win'] > 0.5).astype(int)
+point_df['round_points'] += 5 * point_df['advances']
 point_df['points'] = point_df['round_points'] + point_df['won_games'] - point_df['lost_games']
+point_df = point_df.drop(columns=['advances'])
 
 # read teams 
 # TODO: have as separate file?
@@ -70,13 +76,15 @@ result_df = team_df.merge(point_df, on='player', how='left')
 standing_df = result_df.filter(items=['team','points']).groupby('team').sum().sort_values(by='points', ascending=False)
 
 # write output
-result_df.fillna(0).to_csv('results.csv', index=False, float_format='%g')
-standing_df.fillna(0).to_csv('standings.csv', float_format='%g')
+if not os.path.exists('output'):
+    os.makedirs('output')
 
-with open("latest_update", "w") as text_file:
+result_df.fillna(0).to_csv('output/results.csv', index=False, float_format='%g')
+standing_df.fillna(0).to_csv('output/standings.csv', float_format='%g')
+
+with open("output/latest_update", "w") as text_file:
     text_file.write("Updated: %s" % str(datetime.datetime.now()))
     text_file.write('<br><br>Latest round: %s' % str(last_match))
 
 print(result_df)
-
 

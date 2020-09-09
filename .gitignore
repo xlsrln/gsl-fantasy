@@ -1,2 +1,4 @@
 apikey
 token.pickle
+output
+*.csv

@@ -66,8 +66,10 @@ team_df = pd.read_csv(teams, sep=', ', header='infer')
 team_df = team_df.melt(var_name='team', value_name='player')
 
 # join teams with results to aggregate 
-result_df = team_df.merge(point_df, on='player', how='left')
-standing_df = result_df.filter(items=['team','points']).groupby('team').sum().sort_values(by='points', ascending=False)
+result_df = team_df.merge(point_df, on='player', how='outer').fillna('no team')
+standing_df = result_df.query('team != "no team"')\
+                        .filter(items=['team','points'])\
+                        .groupby('team').sum().sort_values(by='points', ascending=False)
 
 # write output
 result_df.fillna(0).to_csv('results.csv', index=False, float_format='%g')
@@ -78,5 +80,3 @@ with open("latest_update", "w") as text_file:
     text_file.write('<br><br>Latest round: %s' % str(last_match))
 
 print(result_df)
-
-

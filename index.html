@@ -16,37 +16,37 @@
 <script type="text/javascript">
 <!--
 
-fetch('standings.csv') 
+fetch('standings.csv')
     .then(response => response.text())
     .then((data) => {
-    
+
         var dict = {
-            'NVP': 'nvp.png', 
-            'MM Lolsters': 'mm.png', 
-            'SS telecom Z1': 'ss.png', 
-            'Varbergs Zergs': 'vz.png', 
+            'NVP': 'nvp.png',
+            'MM Lolsters': 'mm.png',
+            'SS telecom Z1': 'ss.png',
+            'Varbergs Zergs': 'vz.png',
             'Grounzhog Day': 'gd.png'
         };
 
         rows = data.split("\n")
 
         table_code = '<table border=1 width=400px class="example-table">'
-        table_code += '<tr><th>logo</th><th>team</th><th>points</th></tr>' 
-        
+        table_code += '<tr><th>logo</th><th>team</th><th>points</th><th>rank</th></tr>'
+
         for (var i = 1; i < rows.length; i++) {
             if (rows[i].length > 0) {
                 console.log(rows[i]);
                 table_code += '<tr><td>'
-                table_code += '<img src=img/' + dict[rows[i].split(',')[0]] + ' height="50">' 
+                table_code += '<img src=img/' + dict[rows[i].split(',')[0]] + ' height="50">'
                 table_code += '<td>'
-                table_code += rows[i].replace(',', '</td><td>') 
+                table_code += rows[i].replace(/,/g, '</td><td>')
                 table_code += '</td></tr>'
             }
         }
 
         document.getElementById('text').innerHTML = table_code;
     })
-    
+
 fetch('results.csv') 
     .then(response => response.text())
     .then((data) => {

@@ -7,54 +7,8 @@ keyfile = open('apikey','r')
 baseurl = "http://aligulac.com/api/v1/"
 authkey = {'apikey': keyfile.read().rstrip()}
 
-# Request
-# myrequest = "match/?eventobj__uplink__parent=110098&limit=100&order=-date" # GSL s2 2020
-myrequest = "match/?eventobj__uplink__parent=107374&limit=100&order=-date" # GSL s3 2020
-
-# get response from api
-response = requests.get(baseurl + myrequest, params=authkey)
-response.encoding = 'utf-8'
-mystring = response.text.replace('null', 'None').replace('false', 'False').replace('true', 'True')
-
-# eval string to dict, extract data from it
-matches = eval(mystring)['objects']
-
-data = []
-
-for match in matches:    
-    player1 = match['pla']['tag'].lower()
-    player2 = match['plb']['tag'].lower()
-    score1 = match['sca']
-    score2 = match['scb']
-    round = match['eventobj']['fullname']
-    print(str(player1) + ', ' + str(score1) +', ' + str(score2) + ', ' + str(player2) + ', ' + str(round))
-    data.append([player1,score1,score2,round])
-    data.append([player2,score2,score1,round])
-    
-# data is now a table, make it a dataframe
-df = pd.DataFrame(data)
-df.columns = ['player','won','lost','matchdata']
-
-last_match = df.iloc[1]['matchdata']
-
-df = df[df['matchdata'].str.contains("Code S")]
-df['round'] = df['matchdata'].apply(lambda x: x.split('Code S ')[1].split(' ')[0])
-df = df.drop('matchdata', axis=1)
-round_dict = {'Ro24': 1, 'Ro16': 2, 'Ro8': 3, 'Ro4': 4, 'Final': 5}
-df['round_points'] = df['round'].apply(lambda x: 5 * round_dict[x])
-
-# save match data to csv
-df.to_csv('matches.csv', index=False)
-
-# from the match dataframe, calculate won/lost and points
-point_df = df.filter(items=['player','round_points']).groupby('player').max()
-point_df['won_games'] = df.filter(items=['player','won']).groupby('player').sum()['won']
-point_df['lost_games'] = df.filter(items=['player','lost']).groupby('player').sum()['lost']
-point_df['points'] = point_df['round_points'] + point_df['won_games'] - point_df['lost_games']
-
-# read teams 
-# TODO: have as separate file?
-teams = StringIO("""
+# teams for s3 2020
+teams_2020 = StringIO("""
 NVP, MM Lolsters, SS telecom Z1, Varbergs Zergs, Grounzhog Day
 rogue, ty, dark, maru, innovation
 cure, dongraegu, parting, stats, solar
@@ -62,21 +16,135 @@ dream, trap, zest, soo, taeja
 ragnarok, byun, sos, bunny, hurricane
 """)
 
-team_df = pd.read_csv(teams, sep=', ', header='infer')
-team_df = team_df.melt(var_name='team', value_name='player')
+team_df_2020 = pd.read_csv(teams_2020, sep=', ', header='infer', engine='python')
+team_df_2020 = team_df_2020.melt(var_name='team', value_name='player')
 
-# join teams with results to aggregate 
-result_df = team_df.merge(point_df, on='player', how='outer').fillna('no team')
-standing_df = result_df.query('team != "no team"')\
-                        .filter(items=['team','points'])\
-                        .groupby('team').sum().sort_values(by='points', ascending=False)
+# teams for s1 2021
+teams_2021_1 = StringIO("""
+NVP, MM Lolsters, SS telecom Z1, Varbergs Zergs, Grounzhog Day
+rogue, ty, dark, maru, innovation
+cure, zoun, prince, stats, solar
+dream, trap, zest, armani, dongraegu
+parting, byun, sos, bunny, ragnarok
+""")
+
+team_df_2021_1 = pd.read_csv(teams_2021_1, sep=', ', header='infer', engine='python')
+team_df_2021_1 = team_df_2021_1.melt(var_name='team', value_name='player')
+
+# event keys for 2021 s1
+events = [117965, 119400]
+
+
+def matches(event, print_bool=False):
+    # Request
+    myrequest = f"match/?eventobj__uplink__parent={event}&limit=200&order=-date"
+
+    # get response from api
+    response = requests.get(baseurl + myrequest, params=authkey)
+    response.encoding = 'utf-8'
+    mystring = response.text.replace('null', 'None').replace('false', 'False').replace('true', 'True')
+
+    # eval string to dict, extract data from it
+    matches = eval(mystring)['objects']
+
+    data = []
+
+    for match in matches:
+        player1 = match['pla']['tag'].lower()
+        player2 = match['plb']['tag'].lower()
+        score1 = match['sca']
+        score2 = match['scb']
+        round = match['eventobj']['fullname']
+        if print_bool:
+            print(str(player1) + ', ' + str(score1) +', ' + str(score2) + ', ' + str(player2) + ', ' + str(round))
+        data.append([player1,score1,score2,round])
+        data.append([player2,score2,score1,round])
+
+    # data is now a table, make it a dataframe
+    df = pd.DataFrame(data)
+    df.columns = ['player','won','lost','matchdata']
+
+    last_match = df.iloc[1]['matchdata']
+
+    with open("latest_update", "w") as text_file:
+        text_file.write("Updated: %s" % str(datetime.datetime.now()))
+        text_file.write('<br><br>Latest round: %s' % str(last_match))
+
+    df = df[df['matchdata'].str.contains("Code S|Code A|Main Event")]
+
+    def round_finder(round_string):
+        if 'Code S Playoffs' in round_string:
+            return round_string.split('Code S ')[1].split(' ')[-1]
+        if 'Code S Group Stage' in round_string:
+            return 'Ro16'
+        if 'Code S' in round_string:
+            return round_string.split('Code S ')[1].split(' ')[0]
+        if 'Super Tournament' in round_string:
+            return round_string.split('Main Event ')[1].split(' ')[0]
+        if 'Code A' in round_string:
+            return 'Ro24'
+
+    df['round'] = df['matchdata'].apply(round_finder)
+    df = df.drop('matchdata', axis=1)
+    round_dict = {'Ro24': 1, 'Ro16': 2, 'Ro8': 3, 'Ro4': 4, 'Final': 5}
+
+    df['round_points'] = df['round'].apply(lambda x: 5 * round_dict[x])
+
+    # save match data to csv
+    df.to_csv('matches.csv', index=False)
+
+    return df
+
+def point_counter(match_df, teams, print_bool=False):
+
+    # from the match dataframe, calculate won/lost and points
+    point_df = match_df.filter(items=['player','round_points']).groupby('player').max()
+    point_df['won_games'] = match_df.filter(items=['player','won']).groupby('player').sum()['won']
+    point_df['lost_games'] = match_df.filter(items=['player','lost']).groupby('player').sum()['lost']
+    point_df['points'] = point_df['round_points'] + point_df['won_games'] - point_df['lost_games']
+
+    # join teams with results to aggregate
+    result_df = teams.merge(point_df, on='player', how='outer').fillna(0)
+    result_df['team'] = result_df['team'].replace(0, 'no team')
+
+    # convert to integers from floats
+    result_df = result_df.astype({"round_points":'int', "won_games":'int', "lost_games":'int', "points":'int'})
+
+    # aggregate team standings
+    standing_df = result_df.query('team != "no team"')\
+                            .filter(items=['team','points'])\
+                            .groupby('team').sum().sort_values(by='points', ascending=False)
+
+    if print_bool:
+        print(result_df)
+        print(standing_df)
+
+    return (result_df, standing_df)
+
+## actually calculate stuff
+results = []
+standings = []
+
+for event_key in events:
+    df = matches(event_key)
+    results.append(point_counter(df, team_df_2021_1)[0])
+    standings.append(point_counter(df, team_df_2021_1)[1])
+
+standings_df = pd.concat(standings).groupby(['team']).sum()
+standings_df['rank'] = standings_df.rank(ascending=False)
+standings_df = standings_df.astype({'rank': 'int'}).sort_values(by='points', ascending=False)
+
+result_df = pd.concat(results)\
+    .groupby(['player', 'team']).sum().reset_index()\
+    .merge(standings_df, on='team', how='left', suffixes=('' , '_team'))\
+    .sort_values(by=['rank', 'points'], ascending=[True, False])\
+    .drop(['rank', 'points_team'], axis=1)
+
+result_df = result_df.astype({'round_points': 'int',
+                              'won_games':'int',
+                              'lost_games':'int',
+                              'points':'int'})
 
 # write output
-result_df.fillna(0).to_csv('results.csv', index=False, float_format='%g')
-standing_df.fillna(0).to_csv('standings.csv', float_format='%g')
-
-with open("latest_update", "w") as text_file:
-    text_file.write("Updated: %s" % str(datetime.datetime.now()))
-    text_file.write('<br><br>Latest round: %s' % str(last_match))
-
-print(result_df)
+result_df.fillna(0).to_csv('output/results.csv', index=False, float_format='%g')
+standings_df.fillna(0).to_csv('output/standings.csv', float_format='%g')

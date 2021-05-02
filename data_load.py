@@ -49,7 +49,7 @@ def matches(event, print_bool=False):
 
     data = []
 
-    for match in matches:
+    for match in matches:    
         player1 = match['pla']['tag'].lower()
         player2 = match['plb']['tag'].lower()
         score1 = match['sca']
@@ -65,13 +65,15 @@ def matches(event, print_bool=False):
     df.columns = ['player','won','lost','matchdata']
 
     last_match = df.iloc[1]['matchdata']
-
+    
     with open("latest_update", "w") as text_file:
         text_file.write("Updated: %s" % str(datetime.datetime.now()))
         text_file.write('<br><br>Latest round: %s' % str(last_match))
 
     df = df[df['matchdata'].str.contains("Code S|Code A|Main Event")]
-
+    
+    df['ST'] = df['matchdata'].str.contains("Super Tournament")
+    
     def round_finder(round_string):
         if 'Code S Playoffs' in round_string:
             return round_string.split('Code S ')[1].split(' ')[-1]
@@ -83,16 +85,19 @@ def matches(event, print_bool=False):
             return round_string.split('Main Event ')[1].split(' ')[0]
         if 'Code A' in round_string:
             return 'Ro24'
-
+    
     df['round'] = df['matchdata'].apply(round_finder)
-    df = df.drop('matchdata', axis=1)
+    
     round_dict = {'Ro24': 1, 'Ro16': 2, 'Ro8': 3, 'Ro4': 4, 'Final': 5}
-
+    
     df['round_points'] = df['round'].apply(lambda x: 5 * round_dict[x])
+    df['round_points'] = df['round_points'] - 5 * df['ST']
 
+    df = df.drop(['matchdata', 'ST'], axis=1)
+    
     # save match data to csv
     df.to_csv('matches.csv', index=False)
-
+    
     return df
 
 def point_counter(match_df, teams, print_bool=False):

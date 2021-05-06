@@ -7,6 +7,17 @@ keyfile = open('apikey','r')
 baseurl = "http://aligulac.com/api/v1/"
 authkey = {'apikey': keyfile.read().rstrip()}
 
+# teams for s2 2021
+teams_2021_s2 = StringIO("""
+Grounzhog Day, MM Lolsters, NVP, SS telecom Z1, Varbergs Zergs
+innovation, ragnarok, byun, dark, armani
+solar, trap, dream, sos, bunny
+cure, ty, rogue, zoun, maru
+""")
+
+team_df_2021_s2 = pd.read_csv(teams_2021_s2, sep=', ', header='infer', engine='python')
+team_df_2021_s2 = team_df_2021_s2.melt(var_name='team', value_name='player')
+
 # teams for s3 2020
 teams_2020 = StringIO("""
 NVP, MM Lolsters, SS telecom Z1, Varbergs Zergs, Grounzhog Day
@@ -32,8 +43,11 @@ team_df_2021_1 = pd.read_csv(teams_2021_1, sep=', ', header='infer', engine='pyt
 team_df_2021_1 = team_df_2021_1.melt(var_name='team', value_name='player')
 
 # event keys for 2021 s1
-events = [117965, 119400]
+# events = [117965, 119400]
 
+# event keys for 2021 s2
+events = [121502]
+team_df = team_df_2021_s2
 
 def matches(event, print_bool=False):
     # Request
@@ -132,8 +146,8 @@ standings = []
 
 for event_key in events:
     df = matches(event_key)
-    results.append(point_counter(df, team_df_2021_1)[0])
-    standings.append(point_counter(df, team_df_2021_1)[1])
+    results.append(point_counter(df, team_df)[0])
+    standings.append(point_counter(df, team_df)[1])
 
 standings_df = pd.concat(standings).groupby(['team']).sum()
 standings_df['rank'] = standings_df.rank(ascending=False)

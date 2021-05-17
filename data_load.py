@@ -68,15 +68,16 @@ def matches(event, print_bool=False):
         player2 = match['plb']['tag'].lower()
         score1 = match['sca']
         score2 = match['scb']
+        winloss = match['sca'] / (match['sca'] + match['scb'])
         round = match['eventobj']['fullname']
         if print_bool:
             print(str(player1) + ', ' + str(score1) +', ' + str(score2) + ', ' + str(player2) + ', ' + str(round))
-        data.append([player1,score1,score2,round])
-        data.append([player2,score2,score1,round])
+        data.append([player1,score1,score2,round, winloss])
+        data.append([player2,score2,score1,round, 1-winloss])
 
     # data is now a table, make it a dataframe
     df = pd.DataFrame(data)
-    df.columns = ['player','won','lost','matchdata']
+    df.columns = ['player','won','lost','matchdata','winloss']
 
     last_match = df.iloc[1]['matchdata']
     
@@ -116,13 +117,22 @@ def matches(event, print_bool=False):
 
 def point_counter(match_df, teams, print_bool=False):
 
+    # tricky stuff to give +5 points to people who advanced
+    point_df = df.groupby(['player','round_points']).mean()[['winloss']].\
+        merge(df.groupby(['player']).max()['round_points'], on=['player', 'round_points'])
+    point_df['next_round_points'] = (point_df['winloss'] > 0.5) * 5
+    
     # from the match dataframe, calculate won/lost and points
-    point_df = match_df.filter(items=['player','round_points']).groupby('player').max()
+    # point_df = match_df.filter(items=['player','round_points']).groupby('player').max()    
     point_df['won_games'] = match_df.filter(items=['player','won']).groupby('player').sum()['won']
     point_df['lost_games'] = match_df.filter(items=['player','lost']).groupby('player').sum()['lost']
     point_df['points'] = point_df['round_points'] + point_df['won_games'] - point_df['lost_games']
 
-    # join teams with results to aggregate
+    # trickery
+    point_df['points'] += point_df['next_round_points']
+    point_df = point_df.drop(['next_round_points', 'winloss'], axis=1)
+    
+    # join teams with results to aggregate 
     result_df = teams.merge(point_df, on='player', how='outer').fillna(0)
     result_df['team'] = result_df['team'].replace(0, 'no team')
 

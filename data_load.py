@@ -116,10 +116,11 @@ def matches(event, print_bool=False):
     return df
 
 def point_counter(match_df, teams, print_bool=False):
-
+    
     # tricky stuff to give +5 points to people who advanced
     point_df = df.groupby(['player','round_points']).mean()[['winloss']].\
-        merge(df.groupby(['player']).max()['round_points'], on=['player', 'round_points'])
+        merge(df.filter(items=['player','round_points']).groupby(['player']).max(), 
+              on=['player', 'round_points'], suffixes=('', 'x'))
     point_df['next_round_points'] = (point_df['winloss'] > 0.5) * 5
     
     # from the match dataframe, calculate won/lost and points

@@ -81,7 +81,7 @@ def matches(event, print_bool=False):
 
     last_match = df.iloc[1]['matchdata']
     
-    with open("latest_update", "w") as text_file:
+    with open("output/latest_update", "w") as text_file:
         text_file.write("Updated: %s" % str(datetime.datetime.now()))
         text_file.write('<br><br>Latest round: %s' % str(last_match))
 
@@ -123,14 +123,13 @@ def point_counter(match_df, teams, print_bool=False):
               on=['player', 'round_points'], suffixes=('', 'x'))
     point_df['next_round_points'] = (point_df['winloss'] > 0.5) * 5
     
-    # from the match dataframe, calculate won/lost and points
-    # point_df = match_df.filter(items=['player','round_points']).groupby('player').max()    
+    # from the match dataframe, calculate won/lost and points  
     point_df['won_games'] = match_df.filter(items=['player','won']).groupby('player').sum()['won']
     point_df['lost_games'] = match_df.filter(items=['player','lost']).groupby('player').sum()['lost']
+    point_df['round_points'] += point_df['next_round_points']
     point_df['points'] = point_df['round_points'] + point_df['won_games'] - point_df['lost_games']
-
+    
     # trickery
-    point_df['points'] += point_df['next_round_points']
     point_df = point_df.drop(['next_round_points', 'winloss'], axis=1)
     
     # join teams with results to aggregate 

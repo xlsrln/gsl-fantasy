@@ -68,16 +68,16 @@ def matches(event, print_bool=False):
         player2 = match['plb']['tag'].lower()
         score1 = match['sca']
         score2 = match['scb']
-        winloss = match['sca'] / (match['sca'] + match['scb'])
-        round = match['eventobj']['fullname']
+        winloss = round(match['sca'] / (match['sca'] + match['scb']))
+        round_name = match['eventobj']['fullname']
         if print_bool:
             print(str(player1) + ', ' + str(score1) +', ' + str(score2) + ', ' + str(player2) + ', ' + str(round))
-        data.append([player1,score1,score2,round, winloss])
-        data.append([player2,score2,score1,round, 1-winloss])
+        data.append([player1, score1, score2, round_name, winloss])
+        data.append([player2, score2, score1, round_name, 1-winloss])
 
     # data is now a table, make it a dataframe
     df = pd.DataFrame(data)
-    df.columns = ['player','won','lost','matchdata','winloss']
+    df.columns = ['player', 'won', 'lost', 'matchdata', 'winloss']
 
     last_match = df.iloc[1]['matchdata']
     
